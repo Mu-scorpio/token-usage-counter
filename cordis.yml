@@ -9,4 +9,4 @@
 
 - insert:
     - id: token-usage-counter
-      name: './token-usage-counter.ts'
+      name: './src/index.ts'

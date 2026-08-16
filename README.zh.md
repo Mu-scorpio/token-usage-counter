@@ -41,9 +41,26 @@
   <img src="assets/usage-stats-hover.png" alt="热力图显示每日总 Token 的提示框" width="620">
 </p>
 
-## 安装
+## 作为 DSH 插件安装
 
-把本目录复制到 Harness 项目可访问的位置，然后应用随附的 overlay：
+推荐使用已发布的 npm Bundle：
+
+```sh
+dsh plugin --profile web add dsh-token-usage-counter
+```
+
+然后启动或刷新 Web profile：
+
+```sh
+dsh web
+```
+
+包内声明了 `dsh.bundle` manifest，CLI 会自动应用 `cordis.patch.yml` 配置层并
+挂载插件，不需要修改 Harness 源码。
+
+### 本地开发 overlay
+
+发布前直接运行 checkout 时，可以使用本目录提供的 overlay：
 
 ```sh
 dsh web --patch token-usage-counter/cordis.yml
@@ -52,11 +69,21 @@ dsh web --patch token-usage-counter/cordis.yml
 或者在自己的 `cordis.yml` 中加入：
 
 ```yaml
-- name: './token-usage-counter/token-usage-counter.ts'
+- name: './src/index.ts'
 ```
 
 插件依赖 `sessions` 和 `settings` 服务；当 `commands` 服务存在时，才会启用
 `/tokens` 命令。
+
+### 从源码构建
+
+仓库会提交生成后的 `lib/index.js`，因此从 GitHub 安装时不需要额外的安装时构建
+授权。修改源码后，在仓库根目录执行：
+
+```sh
+pnpm install
+pnpm build
+```
 
 > 随附的 overlay 会先禁用内置的 `usage-stats` 行，再挂载本插件，因为两者使用
 > 同一个 settings 命名空间。手动挂载时，请不要同时启用

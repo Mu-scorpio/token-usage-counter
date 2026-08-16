@@ -1,0 +1,66 @@
+{
+  "name": "dsh-token-usage-counter",
+  "version": "0.1.0",
+  "description": "Persistent provider-reported token usage statistics for DeepSeek Harness, with per-session, per-model, and daily activity data.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "assets"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek",
+    "deepseek-harness",
+    "token-usage",
+    "usage-statistics",
+    "token-analytics",
+    "prompt-cache",
+    "llm-observability",
+    "typescript",
+    "cordis"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mu-scorpio/token-usage-counter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Mu-scorpio/token-usage-counter/issues"
+  },
+  "homepage": "https://github.com/Mu-scorpio/token-usage-counter#readme",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "prepublishOnly": "pnpm build"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/schemastery": "*",
+    "@deepseek-ai/dsh-llm": "*",
+    "@deepseek-ai/dsh-session": "*",
+    "@deepseek-ai/dsh-session-persistence": "*",
+    "@deepseek-ai/dsh-settings": "*"
+  },
+  "devDependencies": {
+    "tsdown": "^0.22.2",
+    "typescript": "^5.8.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

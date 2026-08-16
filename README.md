@@ -56,10 +56,27 @@ the details:
 Hover or focus a cell to see the exact local date, total tokens consumed, and
 number of calls reported for that day.
 
-## Install
+## Install as a DSH plugin
 
-Copy this directory into a location available to your Harness project, then
-apply the included overlay:
+The recommended path is the published npm bundle:
+
+```sh
+dsh plugin --profile web add dsh-token-usage-counter
+```
+
+Then start or refresh the Web profile:
+
+```sh
+dsh web
+```
+
+The package declares a `dsh.bundle` manifest, so the CLI automatically applies
+its `cordis.patch.yml` layer and mounts the plugin without editing the Harness
+source tree.
+
+### Local development overlay
+
+To run the checkout directly before publishing, apply the included overlay:
 
 ```sh
 dsh web --patch token-usage-counter/cordis.yml
@@ -68,11 +85,21 @@ dsh web --patch token-usage-counter/cordis.yml
 Or add the plugin to your own `cordis.yml`:
 
 ```yaml
-- name: './token-usage-counter/token-usage-counter.ts'
+- name: './src/index.ts'
 ```
 
 The plugin requires the `sessions` and `settings` services. The `/tokens`
 command is enabled when the `commands` service is available.
+
+### Build from source
+
+The repository commits the generated `lib/index.js` artifact so GitHub installs
+do not need an install-time build permission. To rebuild it locally:
+
+```sh
+pnpm install
+pnpm build
+```
 
 > The included overlay disables the stock `usage-stats` row before mounting
 > this plugin, because both components own the same settings namespace. If you
