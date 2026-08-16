@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Persistent provider-reported token usage statistics for DeepSeek Harness, with per-session, per-model, and daily activity data.",
   "type": "module",
   "main": "lib/index.js",
