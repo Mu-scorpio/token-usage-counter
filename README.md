@@ -1,114 +1,116 @@
-# Token Usage Counter
+# Token 用量统计插件
 
-English | [中文](README.zh.md)
-
-<div align="center">
-  <h2>Know where every token goes.</h2>
-  <p>A persistent, accurate usage counter for DeepSeek Harness.</p>
-  <p>
-    <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a>
-    · TypeScript · Cordis plugin · local-first analytics
-  </p>
-</div>
+为 DeepSeek Harness 提供持久、准确的 Token 用量统计。插件读取 provider
+上报的真实用量，区分输入（未命中）、输入（命中）、缓存写入和输出，并提供
+累计统计、今日数据、热力图、分模型统计以及 `/tokens` 命令。
 
 <p align="center">
-  <img src="assets/usage-stats-overview.png" alt="Token usage dashboard in DeepSeek Harness" width="860">
+  <img src="assets/usage-stats-overview.png" alt="DeepSeek Harness 中的 Token 用量统计" width="860">
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/dsh-token-usage-counter"><img src="https://img.shields.io/npm/v/dsh-token-usage-counter?color=2563eb&label=npm" alt="npm version"></a>
   <a href="https://github.com/Mu-scorpio/token-usage-counter"><img src="https://img.shields.io/badge/DeepSeek%20Harness-plugin-2563eb" alt="DeepSeek Harness plugin"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-16a34a" alt="MIT license"></a>
-  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-ready-3178c6" alt="TypeScript"></a>
+  <a href="README.zh.md"><img src="https://img.shields.io/badge/docs-中文-ef4444" alt="Chinese documentation"></a>
 </p>
 
-`token-usage-counter` is a DeepSeek Harness plugin for accurate LLM token
-analytics. It persists provider-reported usage across restarts and makes the
-numbers available globally, by session, and by model—without counting failed
-or retried attempts twice.
+## 功能
 
-## Why this counter is different
-
-| Capability | What you get |
+| 能力 | 说明 |
 | --- | --- |
-| **Accurate buckets** | Uncached input, cache-hit input, cache writes, and output remain separate. |
-| **Durable totals** | Statistics are persisted in the Harness `usage-stats` settings namespace. Restarting the harness does not reset them. |
-| **Useful dimensions** | Inspect totals globally, per session, or per provider/model. |
-| **Daily activity** | Feed the Web Settings summary and responsive heatmap with local-calendar-day data. |
-| **Safe finalization** | Usage-only chunks are held until the matching successful message confirms them. |
-| **Interactive command** | When `commands` is mounted, `/tokens` prints a readable live summary. |
-
-## The dashboard
-
-The companion Web Settings view is designed for quick scanning without hiding
-the details:
-
-- a three-row cumulative card for total tokens, uncached input, cached input,
-  output tokens, and total calls;
-- a dedicated **today** card for the current local day;
-- a responsive 12–52 week activity heatmap that uses the available width;
-- hover or keyboard focus for the exact daily total-token count and call count;
-- an optional provider/model breakdown when model details are present.
+| **精确分桶** | 输入（未命中）、输入（命中）、缓存写入和输出保持独立。 |
+| **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
+| **多维统计** | 支持全局、会话、Provider / 模型三个维度。 |
+| **今日数据** | 单独展示当前本地日的 Token 用量和调用次数。 |
+| **动态热力图** | 根据容器宽度在 12–52 周之间调整，避免右侧留下大片空白。 |
+| **悬停详情** | 悬停或键盘聚焦热力图单元格，查看日期、总 Token 和调用次数。 |
+| **安全提交** | 只在成功消息确认后提交 usage-only chunk，避免失败请求和重试重复计数。 |
+| **交互命令** | 挂载 `commands` 服务时提供 `/tokens`，随时查看累计摘要。 |
 
 <p align="center">
-  <img src="assets/usage-stats-hover.png" alt="Daily total token tooltip on the usage heatmap" width="620">
+  <img src="assets/usage-stats-hover.png" alt="热力图显示每日总 Token 和调用次数" width="620">
 </p>
 
-Hover or focus a cell to see the exact local date, total tokens consumed, and
-number of calls reported for that day.
+## 安装
 
-## Install as a DSH plugin
-
-The recommended path is the published npm bundle:
+推荐安装已经发布到 npm 的 DSH Bundle。下面的命令会把插件安装到 `web`
+profile，并自动维护 profile 的 Bundle 列表：
 
 ```sh
 dsh plugin --profile web add dsh-token-usage-counter
 ```
 
-Then start or refresh the Web profile:
+安装后可以先检查最终配置，再启动 Web：
 
 ```sh
+dsh --profile web --dump-config
 dsh web
 ```
 
-The package declares a `dsh.bundle` manifest, so the CLI automatically applies
-its `cordis.patch.yml` layer and mounts the plugin without editing the Harness
-source tree.
-
-### Local development overlay
-
-To run the checkout directly before publishing, apply the included overlay:
+如果 pnpm 提示不能把依赖添加到 workspace 根目录，在当前 DSH 版本中加上
+`-w`：
 
 ```sh
-dsh web --patch token-usage-counter/cordis.yml
+dsh plugin --profile web add -w dsh-token-usage-counter
 ```
 
-Or add the plugin to your own `cordis.yml`:
+Bundle 内含 `dsh.bundle` manifest 和 `cordis.patch.yml`。安装时会禁用内置的
+host-side `usage-stats` 累加器，再挂载本插件；这样两套累加逻辑不会同时写入
+同一个 settings 命名空间。
+
+> Web 设置页的展示组件属于 Harness 自带的 `ui-usage-stats`，本插件提供的是
+> 数据统计与持久化服务，不会重复安装一套前端页面。界面语言跟随 Harness 的
+> 当前语言设置；本仓库默认 README 使用中文。
+
+### 本地开发
+
+直接使用 checkout 中的源码时，在仓库根目录执行：
+
+```sh
+dsh web --patch ./cordis.yml
+```
+
+或者在自己的 `cordis.yml` 中加入：
 
 ```yaml
-- name: './src/index.ts'
+- id: usage-stats
+  disabled: true
+
+- insert:
+    - id: token-usage-counter
+      name: './src/index.ts'
 ```
 
-The plugin requires the `sessions` and `settings` services. The `/tokens`
-command is enabled when the `commands` service is available.
+手动挂载时不要同时启用 `@deepseek-ai/dsh-usage-stats`，否则会产生 settings
+命名空间冲突。
 
-### Build from source
+### 从源码构建
 
-The repository commits the generated `lib/index.js` artifact so GitHub installs
-do not need an install-time build permission. To rebuild it locally:
+仓库提交了生成后的 `lib/index.js`，从 npm 或 GitHub 安装时不需要安装阶段的
+构建授权。修改源码后，在仓库根目录执行：
 
 ```sh
 pnpm install
 pnpm build
 ```
 
-> The included overlay disables the stock `usage-stats` row before mounting
-> this plugin, because both components own the same settings namespace. If you
-> mount the plugin manually, do not enable `@deepseek-ai/dsh-usage-stats` at
-> the same time.
+## 统计规则
+
+插件监听持久化的 `session/event` 事件流，并在加载时接管已经存在的会话。只有
+成功完成的锚点才会提交用量：
+
+- `assistant/message.usage` 只计入一次；
+- `compaction/summary.usage` 也会作为一次 provider 调用计入；
+- 单独的 `assistant/chunk` 会等待匹配的 `assistant/message` 到达；
+- 同一个 `(turn, step)` 同时出现 chunk 和最终消息时，以最终值替换早期样本；
+- 失败请求、重试请求和 fork 会话的种子历史不会重复计入。
+
+因此页面展示的是已完成的 provider 工作量，而不是原始流事件数量。
 
 ## API
 
-The plugin exposes `ctx.tokenUsageCounter`:
+插件提供 `ctx.tokenUsageCounter`：
 
 ```ts
 ctx.tokenUsageCounter.getSummary()
@@ -117,35 +119,22 @@ ctx.tokenUsageCounter.getModel(provider, model)
 ctx.tokenUsageCounter.formatSummary()
 ```
 
-The summary contains global totals, provider/model totals, and session totals.
-Each counter keeps the four disjoint provider-reported buckets plus
-`totalTokens` and `calls`.
+摘要包含全局、Provider / 模型、会话三个层级的统计。每个计数器都保留四个互不
+重叠的 provider 用量分桶，以及 `totalTokens` 和 `calls`。
 
-## Counting rules
+## 搜索关键词
 
-The counter listens to the durable `session/event` stream and adopts sessions
-that already exist when it loads. It commits usage on successful completion
-anchors:
+DeepSeek Harness 插件 · DSH plugin · Token 用量统计 · Token analytics · LLM
+用量分析 · AI 用量统计 · Prompt Cache 追踪 · 模型用量仪表盘 · 每日 Token 热力图 ·
+TypeScript Cordis 插件 · 本地优先可观测性 · Provider Token 计费
 
-- `assistant/message.usage` is counted once;
-- `compaction/summary.usage` is counted as a provider call too;
-- a usage-only `assistant/chunk` stays pending until its matching
-  `assistant/message` arrives;
-- if a chunk and its final message both report usage for the same `(turn,
-  step)`, the final value replaces the earlier sample;
-- failed attempts, retries, and forked-session seed history are excluded from
-  the totals.
+## 相关链接
 
-This makes the numbers line up with completed provider work instead of raw
-stream traffic.
+- [npm 包](https://www.npmjs.com/package/dsh-token-usage-counter)
+- [GitHub 仓库](https://github.com/Mu-scorpio/token-usage-counter)
+- [DSH Bundle 安装文档](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.md)
+- [DSH 社区插件目录 PR](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/pull/896)
 
-## Keywords
-
-DeepSeek Harness plugin · token usage counter · LLM token analytics · AI usage
-statistics · prompt cache tracking · model usage dashboard · daily token
-heatmap · TypeScript Cordis plugin · local-first observability · provider token
-accounting
-
-## License
+## 许可证
 
 MIT
