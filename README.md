@@ -38,7 +38,7 @@
 profile，并自动维护 profile 的 Bundle 列表：
 
 ```sh
-dsh plugin --profile web add dsh-token-usage-counter
+dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
 ```
 
 安装后可以先检查最终配置，再启动 Web：
@@ -48,12 +48,9 @@ dsh --profile web --dump-config
 dsh web
 ```
 
-如果 pnpm 提示不能把依赖添加到 workspace 根目录，在当前 DSH 版本中加上
-`-w`：
-
-```sh
-dsh plugin --profile web add -w dsh-token-usage-counter
-```
+`-w` 用于允许 pnpm 把包添加到 profile workspace；`--config.auto-install-peers=false`
+用于避免 pnpm 试图从 npm 安装 Harness 内部提供的 peer 包。安装完成后，
+`dsh.profile.bundles` 会自动加入该 Bundle，不需要再手写 `cordis.patch.yml`。
 
 Bundle 内含 `dsh.bundle` manifest 和 `cordis.patch.yml`。安装时会禁用内置的
 host-side `usage-stats` 累加器，再挂载本插件；这样两套累加逻辑不会同时写入
