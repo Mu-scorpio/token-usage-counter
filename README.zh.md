@@ -4,7 +4,7 @@
 
 <div align="center">
   <h2>看清每一个 Token 到底去了哪里。</h2>
-  <p>为 DeepSeek Harness 提供持久、准确的用量统计。</p>
+  <p>为 DeepSeek Harness 提供持久用量统计和模型推理强度配置。</p>
   <p>TypeScript · Cordis 插件 · 本地优先的 LLM 用量分析</p>
 </div>
 
@@ -24,6 +24,7 @@
 | **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
 | **多维查看** | 支持全局、单个会话、Provider / 模型三个维度。 |
 | **每日活跃度** | 为 Web 设置页的累计统计和本地日历热力图提供数据。 |
+| **推理强度** | 为自定义 Provider / 模型补充可配置的推理等级。 |
 | **安全提交** | 只有匹配的成功消息确认后，usage-only chunk 才会计入。 |
 | **交互式命令** | 挂载 `commands` 服务时提供 `/tokens`，随时查看当前摘要。 |
 
@@ -46,7 +47,7 @@
 推荐使用已发布的 npm Bundle：
 
 ```sh
-dsh plugin --profile web add dsh-token-usage-counter
+dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
 ```
 
 然后启动或刷新 Web profile：
@@ -57,6 +58,41 @@ dsh web
 
 包内声明了 `dsh.bundle` manifest，CLI 会自动应用 `cordis.patch.yml` 配置层并
 挂载插件，不需要修改 Harness 源码。
+
+### 配置模型推理强度
+
+在自己的 `cordis.yml` 或最后应用的 patch 中，为同一个插件条目补充 Provider
+配置：
+
+```yaml
+- id: token-usage-counter
+  name: dsh-token-usage-counter
+  config:
+    providers:
+      cliproxyapi:
+        api: openai-responses
+        reasoning: high
+        efforts:
+          low: low
+          medium: medium
+          high: high
+          xhigh: xhigh
+          max: max
+      jyld:
+        api: openai-completions
+        models:
+          deepseek-v4-flash-0731:
+            efforts:
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+```
+
+插件只为已经存在于 `@deepseek-ai/dsh-llm-pi-ai` 设置中的 Provider / 模型补齐
+缺失的 `reasoningEfforts`，不会覆盖手写值；`efforts` 可用于适配网关自定义的
+wire 字符串，`disabled: true` 可关闭单个模型的推理能力。
 
 ### 本地开发 overlay
 
@@ -81,7 +117,7 @@ dsh web --patch token-usage-counter/cordis.yml
 授权。修改源码后，在仓库根目录执行：
 
 ```sh
-pnpm install
+pnpm install --config.auto-install-peers=false
 pnpm build
 ```
 
@@ -119,8 +155,8 @@ ctx.tokenUsageCounter.formatSummary()
 ## 搜索关键词
 
 DeepSeek Harness 插件 · Token 用量统计 · LLM Token 分析 · AI 用量统计 · Prompt
-Cache 追踪 · 模型用量仪表盘 · 每日 Token 热力图 · TypeScript Cordis 插件 ·
-本地优先可观测性 · Provider Token 计费
+Cache 追踪 · 模型用量仪表盘 · 每日 Token 热力图 · 模型推理强度 · reasoning effort ·
+自定义 Provider · TypeScript Cordis 插件 · 本地优先可观测性 · Provider Token 计费
 
 ## 许可证
 

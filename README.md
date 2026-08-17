@@ -1,8 +1,9 @@
 # Token 用量统计插件
 
-为 DeepSeek Harness 提供持久、准确的 Token 用量统计。插件读取 provider
-上报的真实用量，区分输入（未命中）、输入（命中）、缓存写入和输出，并提供
-累计统计、今日数据、热力图、分模型统计以及 `/tokens` 命令。
+为 DeepSeek Harness 提供持久、准确的 Token 用量统计，以及自定义 Provider
+的模型推理强度配置。插件读取 provider 上报的真实用量，区分输入（未命中）、
+输入（命中）、缓存写入和输出，并提供累计统计、今日数据、热力图、分模型统计、
+推理等级同步以及 `/tokens` 命令。
 
 <p align="center">
   <img src="assets/usage-stats-overview.png" alt="DeepSeek Harness 中的 Token 用量统计" width="860">
@@ -23,6 +24,7 @@
 | **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
 | **多维统计** | 支持全局、会话、Provider / 模型三个维度。 |
 | **今日数据** | 单独展示当前本地日的 Token 用量和调用次数。 |
+| **推理强度** | 为自定义 Provider / 模型补充 Low、Medium、High、XHigh、Max 等推理等级。 |
 | **动态热力图** | 根据容器宽度在 12–52 周之间调整，避免右侧留下大片空白。 |
 | **悬停详情** | 悬停或键盘聚焦热力图单元格，查看日期、总 Token 和调用次数。 |
 | **安全提交** | 只在成功消息确认后提交 usage-only chunk，避免失败请求和重试重复计数。 |
@@ -60,6 +62,49 @@ host-side `usage-stats` 累加器，再挂载本插件；这样两套累加逻�
 > 数据统计与持久化服务，不会重复安装一套前端页面。界面语言跟随 Harness 的
 > 当前语言设置；本仓库默认 README 使用中文。
 
+## 配置模型推理强度
+
+安装 Bundle 后，插件会自动提供推理强度同步能力，但不会猜测你的 Provider，
+也不会覆盖已经手工声明的 `reasoningEfforts`。在自己的 `cordis.yml` 或最后
+应用的 patch 中，为同一个 `token-usage-counter` 条目补充配置：
+
+```yaml
+- id: token-usage-counter
+  name: dsh-token-usage-counter
+  config:
+    providers:
+      cliproxyapi:
+        api: openai-responses
+        reasoning: high       # 可选：Provider 默认等级
+        efforts:              # 可选：覆盖默认的 wire 值
+          low: low
+          medium: medium
+          high: high
+          xhigh: xhigh
+          max: max
+      jyld:
+        api: openai-completions
+        models:
+          deepseek-v4-flash-0731:
+            efforts:
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+```
+
+规则如下：
+
+- `api` 只用于选择默认的协议映射；网关使用特殊字符串时，用 `efforts` 覆盖。
+- `reasoning` 会设置 Provider 级默认推理等级；不填写时由模型选择器决定。
+- `models.<id>.efforts` 可以单独覆盖某个模型，`disabled: true` 可以显式关闭。
+- 已存在的 `reasoningEfforts` 和 `reasoningEfforts: false` 永远不会被覆盖。
+- Provider 必须已经存在于 `@deepseek-ai/dsh-llm-pi-ai` 设置中，插件只补齐缺失字段。
+
+如果当前设置里已经有模型推理等级声明，插件会保持现状；因此可以安全地与已有
+的手写配置一起使用。
+
 ### 本地开发
 
 直接使用 checkout 中的源码时，在仓库根目录执行：
@@ -88,7 +133,7 @@ dsh web --patch ./cordis.yml
 构建授权。修改源码后，在仓库根目录执行：
 
 ```sh
-pnpm install
+pnpm install --config.auto-install-peers=false
 pnpm build
 ```
 
@@ -123,6 +168,7 @@ ctx.tokenUsageCounter.formatSummary()
 
 DeepSeek Harness 插件 · DSH plugin · Token 用量统计 · Token analytics · LLM
 用量分析 · AI 用量统计 · Prompt Cache 追踪 · 模型用量仪表盘 · 每日 Token 热力图 ·
+模型推理强度 · reasoning effort · reasoningEfforts · 自定义 Provider ·
 TypeScript Cordis 插件 · 本地优先可观测性 · Provider Token 计费
 
 ## 相关链接
