@@ -1,16 +1,19 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.2.0",
-  "description": "Persistent token usage statistics and provider-aware reasoning effort controls for DeepSeek Harness.",
+  "version": "0.2.1",
+  "description": "Self-contained token usage statistics and provider-aware reasoning effort controls for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
+    "lib/client.js",
+    "lib/client.js.map",
     "cordis.patch.yml",
     "README.md",
     "README.zh.md",
@@ -52,12 +55,19 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-api-remotes": "*",
+    "@deepseek-ai/dsh-client-connection": "*",
+    "@deepseek-ai/dsh-client-locale": "*",
+    "@deepseek-ai/dsh-client-runtime": "*",
+    "@deepseek-ai/dsh-client-ui-settings": "*",
+    "@deepseek-ai/dsh-client-ui-slots": "*",
     "@deepseek-ai/schemastery": "*",
     "@deepseek-ai/dsh-llm": "*",
     "@deepseek-ai/dsh-session": "*",
     "@deepseek-ai/dsh-session-persistence": "*",
     "@deepseek-ai/dsh-settings": "*",
-    "@deepseek-ai/dsh-llm-pi-ai": "*"
+    "@deepseek-ai/dsh-llm-pi-ai": "*",
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "tsdown": "^0.22.2",
@@ -66,6 +76,15 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-locale"
+      ]
     }
   }
 }

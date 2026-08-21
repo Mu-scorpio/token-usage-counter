@@ -24,6 +24,7 @@
 | **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
 | **多维统计** | 支持全局、会话、Provider / 模型三个维度。 |
 | **今日数据** | 单独展示当前本地日的 Token 用量和调用次数。 |
+| **自带设置页** | Bundle 同时提供统计服务和 Web 设置页面，不依赖 Harness 内置用量页面。 |
 | **推理强度** | 为自定义 Provider / 模型补充 Low、Medium、High、XHigh、Max 等推理等级。 |
 | **动态热力图** | 根据容器宽度在 12–52 周之间调整，避免右侧留下大片空白。 |
 | **悬停详情** | 悬停或键盘聚焦热力图单元格，查看日期、总 Token 和调用次数。 |
@@ -54,13 +55,13 @@ dsh web
 用于避免 pnpm 试图从 npm 安装 Harness 内部提供的 peer 包。安装完成后，
 `dsh.profile.bundles` 会自动加入该 Bundle，不需要再手写 `cordis.patch.yml`。
 
-Bundle 内含 `dsh.bundle` manifest 和 `cordis.patch.yml`。安装时会禁用内置的
-host-side `usage-stats` 累加器，再挂载本插件；这样两套累加逻辑不会同时写入
-同一个 settings 命名空间。
+Bundle 内含 `dsh.bundle` 和 `dsh.client` manifest，以及宿主端和浏览器端的构建产物。
+安装时会自动禁用 Harness 内置的 `usage-stats` 累加器和 `ui-usage-stats` 页面，
+再挂载本插件自己的统计服务与设置页；这样既不会重复写入同一个 settings 命名空间，
+也不会因为 Harness 版本不同而出现“有数据但没有设置页面”。
 
-> Web 设置页的展示组件属于 Harness 自带的 `ui-usage-stats`，本插件提供的是
-> 数据统计与持久化服务，不会重复安装一套前端页面。界面语言跟随 Harness 的
-> 当前语言设置；本仓库默认 README 使用中文。
+安装或更新 Bundle 后，需要重启已经运行的 Web Harness，浏览器端插件模块会在启动时
+自动加入设置导航。界面语言跟随 Harness 的当前语言设置；本仓库默认 README 使用中文。
 
 ## 配置模型推理强度
 

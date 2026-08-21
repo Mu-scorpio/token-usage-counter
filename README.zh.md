@@ -24,6 +24,7 @@
 | **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
 | **多维查看** | 支持全局、单个会话、Provider / 模型三个维度。 |
 | **每日活跃度** | 为 Web 设置页的累计统计和本地日历热力图提供数据。 |
+| **自带设置页** | Bundle 同时提供统计服务和 Web 设置页面，不依赖 Harness 内置用量页面。 |
 | **推理强度** | 为自定义 Provider / 模型补充可配置的推理等级。 |
 | **安全提交** | 只有匹配的成功消息确认后，usage-only chunk 才会计入。 |
 | **交互式命令** | 挂载 `commands` 服务时提供 `/tokens`，随时查看当前摘要。 |
@@ -56,8 +57,9 @@ dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usag
 dsh web
 ```
 
-包内声明了 `dsh.bundle` manifest，CLI 会自动应用 `cordis.patch.yml` 配置层并
-挂载插件，不需要修改 Harness 源码。
+包内声明了 `dsh.bundle` 和 `dsh.client` manifest。CLI 会自动应用
+`cordis.patch.yml` 配置层，同时加载宿主端统计服务和浏览器端设置页面，不需要修改
+Harness 源码。安装或更新后请重启已经运行的 `dsh web`，页面会自动加入设置导航。
 
 ### 配置模型推理强度
 
@@ -121,9 +123,10 @@ pnpm install --config.auto-install-peers=false
 pnpm build
 ```
 
-> 随附的 overlay 会先禁用内置的 `usage-stats` 行，再挂载本插件，因为两者使用
-> 同一个 settings 命名空间。手动挂载时，请不要同时启用
-> `@deepseek-ai/dsh-usage-stats`。
+> 随附的 Bundle patch 会先禁用内置的 `usage-stats` 和 `ui-usage-stats`，再挂载
+> 本插件，因为统计服务使用同一个 settings 命名空间，且设置页由本插件自带。手动
+> 挂载时，请不要同时启用 `@deepseek-ai/dsh-usage-stats` 或
+> `@deepseek-ai/dsh-client-ui-usage-stats`。
 
 ## API
 

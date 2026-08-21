@@ -4,6 +4,9 @@
 - id: usage-stats
   disabled: true
 
+- id: ui-usage-stats
+  disabled: true
+
 - insert:
     - id: token-usage-counter
       name: dsh-token-usage-counter
