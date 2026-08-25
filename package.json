@@ -1,7 +1,7 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.2.2",
-  "description": "Self-contained token usage statistics and provider-aware reasoning effort controls for DeepSeek Harness.",
+  "version": "0.3.0",
+  "description": "Self-contained token usage statistics for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -30,10 +30,6 @@
     "token-analytics",
     "prompt-cache",
     "llm-observability",
-    "reasoning-effort",
-    "reasoning-level",
-    "model-settings",
-    "llm-pi-ai",
     "typescript",
     "cordis"
   ],
@@ -66,7 +62,6 @@
     "@deepseek-ai/dsh-session": "*",
     "@deepseek-ai/dsh-session-persistence": "*",
     "@deepseek-ai/dsh-settings": "*",
-    "@deepseek-ai/dsh-llm-pi-ai": "*",
     "react": "^18.2.0"
   },
   "devDependencies": {

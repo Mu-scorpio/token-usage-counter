@@ -26,11 +26,6 @@ import type { TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
 import { settingsNamespace, type SettingsScope } from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-commands'
-import {
-  applyReasoningEffort,
-  reasoningConfigSchema,
-  type ReasoningConfig,
-} from './reasoning-effort.ts'
 
 export interface TokenCounters {
   /** Uncached input tokens reported by the provider. */
@@ -396,12 +391,9 @@ function seedEndFor(history: SessionHistory): number {
 export const name = 'token-usage-counter'
 /** The plugin needs the session store and settings to persist across restarts. */
 export const inject = ['sessions', 'settings']
-/** Configuration schema for provider/model reasoning effort synchronization. */
-export const Config = reasoningConfigSchema
 
-export function apply(ctx: Context, config: ReasoningConfig = {}): void {
+export function apply(ctx: Context): void {
   ctx.plugin(TokenUsageCounter)
-  applyReasoningEffort(ctx, config)
 }
 
 /**

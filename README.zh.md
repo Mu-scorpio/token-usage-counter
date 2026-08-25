@@ -1,195 +1,72 @@
 # Token 用量统计插件
 
-[English](README.md) | 中文
+为 DeepSeek Harness 提供持久、准确的 Provider 用量统计。插件将输入（未命中）、
+输入（命中）、缓存写入和输出分开保存，并提供累计数据、每日数据、会话数据以及
+Provider / 模型数据。
 
-<div align="center">
-  <h2>看清每一个 Token 到底去了哪里。</h2>
-  <p>为 DeepSeek Harness 提供持久用量统计和模型推理强度配置。</p>
-  <p>TypeScript · Cordis 插件 · 本地优先的 LLM 用量分析</p>
-</div>
-
-<p align="center">
-  <img src="assets/usage-stats-overview.png" alt="DeepSeek Harness 中的 Token 用量仪表盘" width="860">
-</p>
-
-`token-usage-counter` 是一个用于 DeepSeek Harness 的 Token 用量统计插件。
-它会持久化 provider 上报的用量，支持全局、按会话、按 Provider / 模型查看，
-并避免把失败请求或重试请求重复算入总量。
-
-## 它解决了什么问题
+## 功能
 
 | 能力 | 说明 |
 | --- | --- |
-| **精确分桶** | 输入（未命中）、输入（命中）、缓存写入、输出保持独立。 |
-| **持久化累计** | 数据写入 Harness 的 `usage-stats` settings 命名空间，重启不会归零。 |
-| **多维查看** | 支持全局、单个会话、Provider / 模型三个维度。 |
-| **每日活跃度** | 为 Web 设置页的累计统计和本地日历热力图提供数据。 |
-| **自带设置页** | Bundle 同时提供统计服务和 Web 设置页面，不依赖 Harness 内置用量页面。 |
-| **推理强度** | 为自定义 Provider / 模型补充可配置的推理等级。 |
-| **安全提交** | 只有匹配的成功消息确认后，usage-only chunk 才会计入。 |
-| **交互式命令** | 挂载 `commands` 服务时提供 `/tokens`，随时查看当前摘要。 |
+| 精确分桶 | 保持四类 Provider 用量相互独立。 |
+| 持久化累计 | 数据写入 Harness 的 usage-stats settings 命名空间，重启不会归零。 |
+| 多维查看 | 支持全局、会话、Provider / 模型三个维度。 |
+| 每日数据 | 统计本地日 Token 总量和调用次数。 |
+| 自带设置页 | 提供 Web 设置视图和热力图。 |
+| 安全提交 | 只有成功完成的锚点才会计入用量。 |
+| 交互命令 | 挂载 commands 服务时提供 /tokens。 |
 
-## 统计仪表盘
+## 安装
 
-配套的 Web 设置视图强调“先看懂，再核对”：
+将已发布的 DSH Bundle 安装到 web profile：
 
-- 三行累计卡片：总 Token、输入（未命中）、输入（命中）、输出 Token、总调用次数；
-- 独立的**今日数据**卡片；
-- 根据容器宽度动态适配的 12–52 周热力图；
-- 鼠标悬停或键盘聚焦查看当日精确总 Token 和调用次数；
-- 快照包含模型明细时，显示 Provider / 模型维度的统计。
+    dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
+    dsh web
 
-<p align="center">
-  <img src="assets/usage-stats-hover.png" alt="热力图显示每日总 Token 的提示框" width="620">
-</p>
+Bundle 会先禁用 Harness 内置的 usage 累加器和页面，再挂载本插件，避免重复注册
+同一个 settings 命名空间。
 
-## 作为 DSH 插件安装
+## 本地开发
 
-推荐使用已发布的 npm Bundle：
+在本仓库目录执行：
 
-```sh
-dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
-```
+    dsh web --patch ./cordis.yml
 
-然后启动或刷新 Web profile：
+本地 overlay 会禁用内置 usage 累加器并挂载 src/index.ts。手动组合时，请同时禁用
+内置 usage-stats loader：
 
-```sh
-dsh web
-```
+    - id: usage-stats
+      disabled: true
 
-包内声明了 `dsh.bundle` 和 `dsh.client` manifest。CLI 会自动应用
-`cordis.patch.yml` 配置层，同时加载宿主端统计服务和浏览器端设置页面，不需要修改
-Harness 源码。安装或更新后请重启已经运行的 `dsh web`，页面会自动加入设置导航。
+    - insert:
+        - id: token-usage-counter
+          name: './src/index.ts'
 
-### 配置模型推理强度
+## 构建
 
-Bundle 已内置 `cliproxyapi` 和 `jyld` 的常用配置；只有当前 `llm-pi-ai` 设置中
-实际存在的 Provider / 模型会被补齐，不存在的路由会自动跳过。插件不会覆盖已经
-手工声明的 `reasoningEfforts`。如果使用其他 Provider，请在自己的 `cordis.yml`
-或最后应用的 patch 中，为同一个 `token-usage-counter` 条目补充配置：
+    pnpm install --config.auto-install-peers=false
+    pnpm build
 
-```yaml
-- id: token-usage-counter
-  name: dsh-token-usage-counter
-  config:
-    providers:
-      cliproxyapi:
-        api: openai-responses
-        reasoning: high
-        efforts:
-          low: low
-          medium: medium
-          high: high
-          xhigh: xhigh
-          max: max
-      jyld:
-        api: openai-completions
-        models:
-          deepseek-v4-flash-0731:
-            efforts:
-              low: low
-              medium: medium
-              high: high
-              xhigh: xhigh
-              max: max
-```
+生成的宿主端和浏览器端 Bundle 位于 lib 目录，并随仓库提交。
 
-升级旧版本时，如果 profile 自己的 `cordis.patch.yml` 里有一段
-`- insert: - id: token-usage-counter`，请删除这段重复插入，只保留对现有条目的
-配置覆盖。否则 Bundle 和 profile 会各插入一次同名 Loader，Harness 会报
-`duplicate loader entry id: token-usage-counter`。
+## 统计规则
 
-插件只为已经存在于 `@deepseek-ai/dsh-llm-pi-ai` 设置中的 Provider / 模型补齐
-缺失的 `reasoningEfforts`，不会覆盖手写值；`efforts` 可用于适配网关自定义的
-wire 字符串，`disabled: true` 可关闭单个模型的推理能力。
+插件监听持久化的 session 事件流：
 
-### 本地开发 overlay
-
-发布前直接运行 checkout 时，可以使用本目录提供的 overlay：
-
-```sh
-dsh web --patch token-usage-counter/cordis.yml
-```
-
-或者在自己的 `cordis.yml` 中加入：
-
-```yaml
-- insert:
-    - id: token-usage-counter
-      name: './src/index.ts'
-      config:
-        providers:
-          cliproxyapi:
-            api: openai-completions
-            reasoning: high
-            efforts:
-              low: low
-              medium: medium
-              high: high
-              xhigh: xhigh
-              max: max
-          jyld:
-            api: openai-completions
-            models:
-              deepseek-v4-flash-0731:
-                efforts:
-                  low: low
-                  medium: medium
-                  high: high
-                  xhigh: xhigh
-                  max: max
-```
-
-插件依赖 `sessions` 和 `settings` 服务；当 `commands` 服务存在时，才会启用
-`/tokens` 命令。
-
-### 从源码构建
-
-仓库会提交生成后的 `lib/index.js`，因此从 GitHub 安装时不需要额外的安装时构建
-授权。修改源码后，在仓库根目录执行：
-
-```sh
-pnpm install --config.auto-install-peers=false
-pnpm build
-```
-
-> 随附的 Bundle patch 会先禁用内置的 `usage-stats` 和 `ui-usage-stats`，再挂载
-> 本插件，因为统计服务使用同一个 settings 命名空间，且设置页由本插件自带。手动
-> 挂载时，请不要同时启用 `@deepseek-ai/dsh-usage-stats` 或
-> `@deepseek-ai/dsh-client-ui-usage-stats`。
+- assistant/message.usage 只计入一次；
+- compaction/summary.usage 作为一次 Provider 调用计入；
+- 单独的 assistant/chunk 会等待匹配的 assistant/message；
+- 同一个 turn 和 step 同时出现 chunk 与最终消息时，以最终值替换早期样本；
+- 失败请求、重试请求和 fork 会话的种子历史不会重复计入。
 
 ## API
 
-插件提供 `ctx.tokenUsageCounter`：
+插件提供 ctx.tokenUsageCounter：
 
-```ts
-ctx.tokenUsageCounter.getSummary()
-ctx.tokenUsageCounter.getSession(sessionId)
-ctx.tokenUsageCounter.getModel(provider, model)
-ctx.tokenUsageCounter.formatSummary()
-```
-
-摘要包含全局、Provider / 模型、会话三个层级的统计。每个计数器都保留四个互不
-重叠的 provider 用量分桶，以及 `totalTokens` 和 `calls`。
-
-## 计数规则
-
-插件监听持久化的 `session/event` 事件流，并在加载时接管已经存在的会话。只有
-成功完成的锚点才会提交用量：
-
-- `assistant/message.usage` 只计入一次；
-- `compaction/summary.usage` 也会作为一次 provider 调用计入；
-- 单独的 `assistant/chunk` 会等待匹配的 `assistant/message` 到达；
-- 同一个 `(turn, step)` 同时出现 chunk 和最终消息时，以最终值替换早期样本；
-- 失败请求、重试请求和 fork 会话的种子历史不会重复计入。
-
-这样得到的是“已完成的 provider 工作量”，而不是原始流事件数量。
-
-## 搜索关键词
-
-DeepSeek Harness 插件 · Token 用量统计 · LLM Token 分析 · AI 用量统计 · Prompt
-Cache 追踪 · 模型用量仪表盘 · 每日 Token 热力图 · 模型推理强度 · reasoning effort ·
-自定义 Provider · TypeScript Cordis 插件 · 本地优先可观测性 · Provider Token 计费
+    ctx.tokenUsageCounter.getSummary()
+    ctx.tokenUsageCounter.getSession(sessionId)
+    ctx.tokenUsageCounter.getModel(provider, model)
+    ctx.tokenUsageCounter.formatSummary()
 
 ## 许可证
 
