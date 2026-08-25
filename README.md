@@ -46,8 +46,8 @@ stock usage-stats loader:
 
 ## Build
 
-    pnpm install --config.auto-install-peers=false
-    pnpm build
+    npm install --ignore-scripts --legacy-peer-deps --no-package-lock
+    npm run build
 
 The generated host and client bundles are committed under lib.
 

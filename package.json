@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Self-contained token usage statistics for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
@@ -47,7 +47,7 @@
   },
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",

@@ -44,8 +44,8 @@ Bundle 会先禁用 Harness 内置的 usage 累加器和页面，再挂载本插
 
 ## 构建
 
-    pnpm install --config.auto-install-peers=false
-    pnpm build
+    npm install --ignore-scripts --legacy-peer-deps --no-package-lock
+    npm run build
 
 生成的宿主端和浏览器端 Bundle 位于 lib 目录，并随仓库提交。
 
