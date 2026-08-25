@@ -63,6 +63,13 @@ export const reasoningConfigSchema: z<ReasoningConfig> = z.object({
 
 const PI_AI_NAMESPACE = settingsNamespace('llm-pi-ai')
 
+// The llm-pi-ai settings namespace is registered by an injected service. On a
+// cold Web boot it can therefore become available one or two turns after this
+// plugin's apply() hook runs. A short bounded retry keeps the bundle reliable
+// without leaving a timer alive forever when the host does not mount llm-pi-ai.
+const STARTUP_RETRY_DELAY_MS = 50
+const STARTUP_RETRY_LIMIT = 40
+
 function atPath(source: unknown, path: readonly string[]): unknown {
   let current = source
   for (const key of path) {
@@ -182,15 +189,15 @@ function buildProviderOps(
   return ops
 }
 
-async function syncReasoningSettings(ctx: Context, config: ReasoningConfig): Promise<void> {
+async function syncReasoningSettings(ctx: Context, config: ReasoningConfig): Promise<boolean> {
   const current = ctx.settings.get(PI_AI_NAMESPACE)
-  if (current === undefined) return
+  if (current === undefined) return false
 
   const ops: SettingsPathOp[] = []
   for (const [provider, providerConfig] of Object.entries(config.providers ?? {})) {
     ops.push(...buildProviderOps(provider, providerConfig, current))
   }
-  if (ops.length === 0) return
+  if (ops.length === 0) return true
 
   try {
     await ctx.settings.mutate(PI_AI_NAMESPACE, ops)
@@ -202,15 +209,28 @@ async function syncReasoningSettings(ctx: Context, config: ReasoningConfig): Pro
     ctx.logger.warn('[token-usage-counter] could not update llm-pi-ai settings')
     ctx.logger.warn(error)
   }
+  return true
 }
 
 /** Start the reasoning-effort synchronizer inside the combined plugin. */
 export function applyReasoningEffort(ctx: Context, config: ReasoningConfig = {}): void {
+  let startupAttempts = 0
+
   const sync = (): void => {
     void syncReasoningSettings(ctx, config)
+      .then((ready) => {
+        if (ready || startupAttempts >= STARTUP_RETRY_LIMIT) return
+        startupAttempts += 1
+        setTimeout(sync, STARTUP_RETRY_DELAY_MS)
+      })
+      .catch((error) => {
+        ctx.logger.warn('[token-usage-counter] reasoning-effort sync failed')
+        ctx.logger.warn(error)
+      })
   }
 
   // llm-pi-ai may register its settings namespace later in the composition.
+  // Retry briefly so a fresh install does not silently miss the first sync.
   setTimeout(sync, 0)
   ctx.on('settings/updated', (namespace: unknown) => {
     if (namespace === PI_AI_NAMESPACE) sync()

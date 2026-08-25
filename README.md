@@ -65,9 +65,10 @@ Bundle 内含 `dsh.bundle` 和 `dsh.client` manifest，以及宿主端和浏览�
 
 ## 配置模型推理强度
 
-安装 Bundle 后，插件会自动提供推理强度同步能力，但不会猜测你的 Provider，
-也不会覆盖已经手工声明的 `reasoningEfforts`。在自己的 `cordis.yml` 或最后
-应用的 patch 中，为同一个 `token-usage-counter` 条目补充配置：
+Bundle 已内置 `cliproxyapi` 和 `jyld` 的常用配置；只有当前 `llm-pi-ai` 设置中
+实际存在的 Provider / 模型会被补齐，不存在的路由会自动跳过。插件不会覆盖已经
+手工声明的 `reasoningEfforts`。如果使用其他 Provider，请在自己的 `cordis.yml`
+或最后应用的 patch 中，为同一个 `token-usage-counter` 条目补充配置：
 
 ```yaml
 - id: token-usage-counter
@@ -94,6 +95,11 @@ Bundle 内含 `dsh.bundle` 和 `dsh.client` manifest，以及宿主端和浏览�
               xhigh: xhigh
               max: max
 ```
+
+升级旧版本时，如果 profile 自己的 `cordis.patch.yml` 里有一段
+`- insert: - id: token-usage-counter`，请删除这段重复插入，只保留对现有条目的
+配置覆盖。否则 Bundle 和 profile 会各插入一次同名 Loader，Harness 会报
+`duplicate loader entry id: token-usage-counter`。
 
 规则如下：
 
@@ -123,6 +129,27 @@ dsh web --patch ./cordis.yml
 - insert:
     - id: token-usage-counter
       name: './src/index.ts'
+      config:
+        providers:
+          cliproxyapi:
+            api: openai-completions
+            reasoning: high
+            efforts:
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+          jyld:
+            api: openai-completions
+            models:
+              deepseek-v4-flash-0731:
+                efforts:
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: xhigh
+                  max: max
 ```
 
 手动挂载时不要同时启用 `@deepseek-ai/dsh-usage-stats`，否则会产生 settings

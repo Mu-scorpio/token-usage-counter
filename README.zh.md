@@ -63,8 +63,10 @@ Harness 源码。安装或更新后请重启已经运行的 `dsh web`，页面�
 
 ### 配置模型推理强度
 
-在自己的 `cordis.yml` 或最后应用的 patch 中，为同一个插件条目补充 Provider
-配置：
+Bundle 已内置 `cliproxyapi` 和 `jyld` 的常用配置；只有当前 `llm-pi-ai` 设置中
+实际存在的 Provider / 模型会被补齐，不存在的路由会自动跳过。插件不会覆盖已经
+手工声明的 `reasoningEfforts`。如果使用其他 Provider，请在自己的 `cordis.yml`
+或最后应用的 patch 中，为同一个 `token-usage-counter` 条目补充配置：
 
 ```yaml
 - id: token-usage-counter
@@ -92,6 +94,11 @@ Harness 源码。安装或更新后请重启已经运行的 `dsh web`，页面�
               max: max
 ```
 
+升级旧版本时，如果 profile 自己的 `cordis.patch.yml` 里有一段
+`- insert: - id: token-usage-counter`，请删除这段重复插入，只保留对现有条目的
+配置覆盖。否则 Bundle 和 profile 会各插入一次同名 Loader，Harness 会报
+`duplicate loader entry id: token-usage-counter`。
+
 插件只为已经存在于 `@deepseek-ai/dsh-llm-pi-ai` 设置中的 Provider / 模型补齐
 缺失的 `reasoningEfforts`，不会覆盖手写值；`efforts` 可用于适配网关自定义的
 wire 字符串，`disabled: true` 可关闭单个模型的推理能力。
@@ -107,7 +114,30 @@ dsh web --patch token-usage-counter/cordis.yml
 或者在自己的 `cordis.yml` 中加入：
 
 ```yaml
-- name: './src/index.ts'
+- insert:
+    - id: token-usage-counter
+      name: './src/index.ts'
+      config:
+        providers:
+          cliproxyapi:
+            api: openai-completions
+            reasoning: high
+            efforts:
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+          jyld:
+            api: openai-completions
+            models:
+              deepseek-v4-flash-0731:
+                efforts:
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: xhigh
+                  max: max
 ```
 
 插件依赖 `sessions` 和 `settings` 服务；当 `commands` 服务存在时，才会启用

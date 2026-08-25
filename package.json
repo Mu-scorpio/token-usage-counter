@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Self-contained token usage statistics and provider-aware reasoning effort controls for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",

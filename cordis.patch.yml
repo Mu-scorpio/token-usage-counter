@@ -10,3 +10,34 @@
 - insert:
     - id: token-usage-counter
       name: dsh-token-usage-counter
+      # Keep the default Web bundle self-contained for the provider routes used
+      # by this package. Providers that are not present in llm-pi-ai are
+      # ignored; other gateways can override this config in their profile.
+      config:
+        providers:
+          cliproxyapi:
+            api: openai-completions
+            reasoning: high
+            efforts:
+              low: low
+              medium: medium
+              high: high
+              xhigh: xhigh
+              max: max
+          jyld:
+            api: openai-completions
+            models:
+              deepseek-v4-flash-0731:
+                efforts:
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: xhigh
+                  max: max
+              deepseek-v4-pro-0813:
+                efforts:
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: xhigh
+                  max: max
