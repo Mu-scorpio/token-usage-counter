@@ -11,12 +11,12 @@ import { installUsageStatsStyles } from './styles.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    'settings.usageStats': UsageStatsLocaleKey
+    'settings.tokenUsageCounter': UsageStatsLocaleKey
   }
 }
 
-const NS = 'settings.usageStats'
-const USAGE_STATS_NAMESPACE = 'usage-stats'
+const NS = 'settings.tokenUsageCounter'
+const USAGE_STATS_NAMESPACE = 'dsh-token-usage-counter'
 
 export const inject = ['slots', 'locale', 'connection', 'remote', 'settingsScope']
 

@@ -1,12 +1,6 @@
-# Bundle patch for `dsh plugin add dsh-token-usage-counter`.
-# The stock usage-stats host row owns the same settings namespace, so disable
-# it before inserting the extended accumulator from this package.
-- id: usage-stats
-  disabled: true
-
-- id: ui-usage-stats
-  disabled: true
-
+# Additive Bundle patch for `dsh plugin add dsh-token-usage-counter`.
+# The plugin owns its entry and settings namespace and can coexist with the
+# stock usage statistics components.
 - insert:
     - id: token-usage-counter
       name: dsh-token-usage-counter

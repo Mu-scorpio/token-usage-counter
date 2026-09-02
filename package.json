@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Self-contained token usage statistics for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
@@ -15,6 +15,8 @@
     "lib/client.js",
     "lib/client.js.map",
     "cordis.patch.yml",
+    "docs/VERIFICATION.md",
+    "scripts/verify-package.mjs",
     "README.md",
     "README.zh.md",
     "LICENSE",
@@ -47,8 +49,17 @@
   },
   "scripts": {
     "build": "tsdown",
-    "prepublishOnly": "npm run build"
+    "verify": "node scripts/verify-package.mjs",
+    "prepublishOnly": "npm run build && npm run verify"
   },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/dsh-api-remotes": "*",
@@ -69,8 +80,20 @@
     "typescript": "^5.8.0"
   },
   "dsh": {
+    "pluginType": "feature",
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "compatibility": {
+      "dsh": ">=0.1.2-alpha.3 <=0.1.2-alpha.5",
+      "dshReleases": {
+        "0.1.2-alpha.3": "compatible",
+        "0.1.2-alpha.4": "compatible",
+        "0.1.2-alpha.5": "compatible"
+      },
+      "profiles": [
+        "web"
+      ]
     },
     "client": {
       "platform": "web",

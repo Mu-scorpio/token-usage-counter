@@ -9,7 +9,7 @@ Provider / 模型数据。
 | 能力 | 说明 |
 | --- | --- |
 | 精确分桶 | 保持四类 Provider 用量相互独立。 |
-| 持久化累计 | 数据写入 Harness 的 usage-stats settings 命名空间，重启不会归零。 |
+| 持久化累计 | 数据写入插件自有的 dsh-token-usage-counter settings 命名空间，重启不会归零。 |
 | 多维查看 | 支持全局、会话、Provider / 模型三个维度。 |
 | 每日数据 | 统计本地日 Token 总量和调用次数。 |
 | 自带设置页 | 提供 Web 设置视图和热力图。 |
@@ -23,8 +23,12 @@ Provider / 模型数据。
     dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
     dsh web
 
-Bundle 会先禁用 Harness 内置的 usage 累加器和页面，再挂载本插件，避免重复注册
-同一个 settings 命名空间。
+Bundle 现在只新增插件自有的 token-usage-counter 入口，不再禁用或替换 Harness
+内置的 usage 累加器和页面。
+
+0.4.0 将持久化数据从共享的 usage-stats 命名空间迁移到插件自有的
+dsh-token-usage-counter 命名空间。由于原命名空间属于内置插件，旧版 0.3.x 的
+累计数据不会被静默搬移；升级后本插件会从独立快照开始统计。
 
 ## 本地开发
 
@@ -32,20 +36,25 @@ Bundle 会先禁用 Harness 内置的 usage 累加器和页面，再挂载本插
 
     dsh web --patch ./cordis.yml
 
-本地 overlay 会禁用内置 usage 累加器并挂载 src/index.ts。手动组合时，请同时禁用
-内置 usage-stats loader：
-
-    - id: usage-stats
-      disabled: true
+本地 overlay 只挂载 src/index.ts，不替换任何内置组件。手动组合时只需新增插件
+自有入口：
 
     - insert:
         - id: token-usage-counter
           name: './src/index.ts'
 
+## 兼容性
+
+- Node.js：22.13.0 或更高版本；
+- DSH：0.1.2-alpha.3 至 0.1.2-alpha.5；
+- Profile：web；
+- 逐版本结果和一次性 Profile 的验证证据见 docs/VERIFICATION.md。
+
 ## 构建
 
     npm install --ignore-scripts --legacy-peer-deps --no-package-lock
     npm run build
+    npm run verify
 
 生成的宿主端和浏览器端 Bundle 位于 lib 目录，并随仓库提交。
 

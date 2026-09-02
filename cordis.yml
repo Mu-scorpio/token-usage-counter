@@ -2,11 +2,6 @@
 # Usage: dsh web --patch token-usage-counter/cordis.yml
 # Or add the entry to your own cordis.yml.
 
-- id: usage-stats
-  # The stock web bundle owns this namespace too. Disable it before mounting
-  # the extended accumulator below, otherwise settings registration collides.
-  disabled: true
-
 - insert:
     - id: token-usage-counter
       name: './src/index.ts'

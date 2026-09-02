@@ -24,7 +24,7 @@ import z from '@deepseek-ai/schemastery'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type { TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
-import { settingsNamespace, type SettingsScope } from '@deepseek-ai/dsh-settings'
+import type { SettingsScope } from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-commands'
 
 export interface TokenCounters {
@@ -185,7 +185,7 @@ const TOKEN_USAGE_COUNTER_SCHEMA = z.object({
   sessions: z.array(SESSION_SCHEMA).default([]),
 }) as unknown as z<PersistedSnapshot>
 
-const TOKEN_USAGE_COUNTER_NAMESPACE = settingsNamespace('usage-stats')
+const TOKEN_USAGE_COUNTER_NAMESPACE = 'dsh-token-usage-counter'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
