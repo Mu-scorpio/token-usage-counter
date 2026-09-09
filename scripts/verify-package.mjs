@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const allowedReleaseStatuses = new Set(['compatible', 'incompatible', 'unknown'])
-const requiredDshReleases = ['0.1.2-alpha.3', '0.1.2-alpha.4', '0.1.2-alpha.5']
+const requiredDshReleases = ['0.1.2-alpha.5', '0.1.2-rc.1', '0.1.3-alpha.1', '0.1.3-alpha.2', '0.1.5-alpha.1', '0.1.5-alpha.2']
 
 async function exists(path) {
   try {
@@ -42,16 +42,16 @@ if (typeof patchPath !== 'string' || patchPath.length === 0 || isAbsolute(patchP
 }
 
 if (packageJson.engines?.node !== '>=22.13.0') fail('engines.node must declare >=22.13.0')
-if (packageJson.dsh?.compatibility?.dsh !== '>=0.1.2-alpha.3 <=0.1.2-alpha.5') {
-  fail('dsh.compatibility.dsh must match the tested release window')
+if (typeof packageJson.dsh?.compatibility?.dsh !== 'string' || !packageJson.dsh.compatibility.dsh.trim()) {
+  fail('dsh.compatibility.dsh must declare a release range')
 }
 const releases = packageJson.dsh?.compatibility?.dshReleases ?? {}
-for (const release of requiredDshReleases) {
+for (const release of new Set([...requiredDshReleases, ...Object.keys(releases)])) {
   if (!allowedReleaseStatuses.has(releases[release])) {
     fail(`dsh.compatibility.dshReleases.${release} must be compatible, incompatible, or unknown`)
   }
 }
-if (!Object.values(releases).includes('compatible')) {
+if (!requiredDshReleases.some(release => releases[release] === 'compatible')) {
   fail('at least one exact DSH release must have verified compatible status')
 }
 

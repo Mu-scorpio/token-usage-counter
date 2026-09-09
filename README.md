@@ -48,10 +48,13 @@ For a manual composition, add only the plugin-owned entry:
 ## Compatibility
 
 - Node.js: 22.13.0 or newer.
-- DSH: 0.1.2-alpha.3 through 0.1.2-alpha.5.
+- DSH: 0.1.2-alpha.3–0.1.2-alpha.5 and 0.1.5-alpha.2 have profile smoke checks; intervening releases are explicitly unknown.
 - Profile: web.
 - Exact per-release results and disposable-profile evidence are recorded in
   docs/VERIFICATION.md.
+
+
+Store listing migration details: [docs/STORE-REMEDIATION.md](docs/STORE-REMEDIATION.md).
 
 ## Build
 
