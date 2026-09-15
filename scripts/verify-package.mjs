@@ -55,6 +55,17 @@ if (!requiredDshReleases.some(release => releases[release] === 'compatible')) {
   fail('at least one exact DSH release must have verified compatible status')
 }
 
+const peerDependencies = packageJson.peerDependencies ?? {}
+const peerDependenciesMeta = packageJson.peerDependenciesMeta ?? {}
+for (const peer of Object.keys(peerDependencies)) {
+  if (peerDependenciesMeta[peer]?.optional !== true) {
+    fail(`host-provided peer dependency must be optional: ${peer}`)
+  }
+}
+for (const peer of Object.keys(peerDependenciesMeta)) {
+  if (!(peer in peerDependencies)) fail(`peerDependenciesMeta contains an undeclared peer: ${peer}`)
+}
+
 const hostSource = await readFile(resolve(root, 'src/index.ts'), 'utf8')
 const clientSource = await readFile(resolve(root, 'src/client/index.tsx'), 'utf8')
 for (const [label, source] of [['host', hostSource], ['client', clientSource]]) {

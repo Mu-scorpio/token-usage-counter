@@ -20,7 +20,7 @@ Provider / 模型数据。
 
 将已发布的 DSH Bundle 安装到 web profile：
 
-    dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
+    dsh plugin --profile web add -w dsh-token-usage-counter
     dsh web
 
 Bundle 现在只新增插件自有的 token-usage-counter 入口，不再禁用或替换 Harness

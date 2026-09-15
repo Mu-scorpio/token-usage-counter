@@ -1,5 +1,19 @@
 # Verification
 
+## 0.4.2 packaging regression — 2026-09-15
+
+- macOS arm64, Node.js 24.16.0, pnpm 9.15.9.
+- A packed 0.4.2 artifact installed into an empty consumer project with plain
+  `pnpm add <tarball>`. Only `dsh-token-usage-counter` was installed; none of
+  the DSH host packages were fetched as peer dependencies.
+- An isolated DSH 0.1.5-rc.1 Profile passed add, composition, and remove using
+  plain `dsh plugin --profile web add -w <tarball>`, without the former
+  `--config.auto-install-peers=false` workaround.
+- `pnpm build` and `pnpm verify`: passed.
+
+This regression check covers packaging and plugin installation behavior only.
+It does not add a runtime compatibility claim for DSH 0.1.5-rc.1.
+
 ## 0.4.1 — 2026-09-09
 
 - macOS arm64, Node.js 24.16.0, pnpm 9.15.9.

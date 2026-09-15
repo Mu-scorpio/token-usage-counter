@@ -21,7 +21,7 @@ views.
 
 Install the published DSH Bundle into the web profile:
 
-    dsh plugin --profile web add -w --config.auto-install-peers=false dsh-token-usage-counter
+    dsh plugin --profile web add -w dsh-token-usage-counter
     dsh web
 
 The Bundle is additive: it mounts only the plugin-owned token-usage-counter
