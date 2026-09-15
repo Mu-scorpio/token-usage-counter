@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const allowedReleaseStatuses = new Set(['compatible', 'incompatible', 'unknown'])
-const requiredDshReleases = ['0.1.2-alpha.5', '0.1.2-rc.1', '0.1.3-alpha.1', '0.1.3-alpha.2', '0.1.5-alpha.1', '0.1.5-alpha.2']
+const requiredDshReleases = ['0.1.2-alpha.5', '0.1.2-rc.1', '0.1.3-alpha.1', '0.1.3-alpha.2', '0.1.5-alpha.1', '0.1.5-alpha.2', '0.1.6-alpha.1']
 
 async function exists(path) {
   try {
@@ -73,6 +73,9 @@ for (const [label, source] of [['host', hostSource], ['client', clientSource]]) 
   if (source.includes('settingsNamespace') || source.includes("USAGE_STATS_NAMESPACE = 'usage-stats'")) {
     fail(`${label} still uses the built-in usage-stats settings namespace`)
   }
+}
+if (!hostSource.includes('compatible.snapshotEvents()') || !hostSource.includes('compatible.events ?? []')) {
+  fail('host must support both current and legacy Session history readers')
 }
 
 const builtHost = await readFile(resolve(root, 'lib/index.js'), 'utf8')

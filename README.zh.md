@@ -46,7 +46,7 @@ dsh-token-usage-counter 命名空间。由于原命名空间属于内置插件�
 ## 兼容性
 
 - Node.js：22.13.0 或更高版本；
-- DSH：0.1.2-alpha.3 至 0.1.2-alpha.5、0.1.5-alpha.2 有 Profile 冒烟验证；中间版本明确标为 unknown；
+- DSH：0.1.2-alpha.3 至 0.1.2-alpha.5、0.1.5-alpha.2、0.1.6-alpha.1 有 Profile 或界面验证；中间版本明确标为 unknown；
 - Profile：web；
 - 逐版本结果和一次性 Profile 的验证证据见 docs/VERIFICATION.md。
 

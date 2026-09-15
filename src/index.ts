@@ -338,6 +338,18 @@ interface SessionHistory {
   firstLiveSeq?: number
 }
 
+interface SessionHistoryReader {
+  /** DSH <= 0.1.5 exposed the complete event log as a public array. */
+  readonly events?: readonly SessionEvent[]
+  /** DSH >= 0.1.6 exposes an immutable snapshot instead. */
+  snapshotEvents?: () => readonly SessionEvent[]
+}
+
+interface CompatibleSessionHeader {
+  /** Legacy persisted headers used this field for the seed boundary. */
+  seedLength?: number
+}
+
 function addDailyRecord(
   daily: Map<string, DailyRecord>,
   dateKey: string,
@@ -375,16 +387,24 @@ function removeDailyRecord(
 }
 
 function historyFromSession(session: Session): SessionHistory {
+  const compatible = session as Session & SessionHistoryReader
+  const events = typeof compatible.snapshotEvents === 'function'
+    ? compatible.snapshotEvents()
+    : compatible.events ?? []
   return {
     sessionId: session.id,
     header: session.header,
-    events: session.events,
+    events,
     firstLiveSeq: session.firstLiveSeq,
   }
 }
 
+function legacySeedLength(header: Session['header']): number {
+  return (header as Session['header'] & CompatibleSessionHeader).seedLength ?? 0
+}
+
 function seedEndFor(history: SessionHistory): number {
-  const boundary = history.firstLiveSeq ?? history.header.seedLength ?? 0
+  const boundary = history.firstLiveSeq ?? legacySeedLength(history.header)
   return history.events[boundary]?.type === 'session/end-seed' ? boundary + 1 : boundary
 }
 
@@ -505,7 +525,7 @@ export class TokenUsageCounter extends Service {
       }
 
       const ordered = [...histories.values()].sort((left, right) => (
-        (left.header.seedLength ?? 0) - (right.header.seedLength ?? 0)
+        legacySeedLength(left.header) - legacySeedLength(right.header)
         || left.header.createdAt - right.header.createdAt
       ))
       const shouldAdoptColdHistory = this.records.size === 0
@@ -667,10 +687,10 @@ export class TokenUsageCounter extends Service {
    * Adopt a session and fold all events this plugin has not consumed yet.
    *
    * Sessions created from a persisted seed (resume/fork) carry their full
-   * history in session.events; session/event only fires for events appended
-   * after construction. The seq watermark lets a resumed session continue from
-   * where a previous live instance of the same id stopped without double
-   * counting its seed history.
+   * history in either the legacy events array or the newer snapshotEvents()
+   * API; session/event only fires for events appended after construction. The
+   * seq watermark lets a resumed session continue from where a previous live
+   * instance of the same id stopped without double counting its seed history.
    */
   private adoptHistory(history: SessionHistory): void {
     const record = this.recordFor(history.sessionId)

@@ -1,5 +1,21 @@
 # Verification
 
+## 0.4.3 DSH 0.1.6 session compatibility — 2026-09-15
+
+- macOS arm64, Node.js 24.16.0, pnpm 9.15.9.
+- DSH: local 0.1.6-alpha.1 source checkout at `0a15e36e7f`.
+- Reproduced workspace selection rollback during `session/create`: DSH 0.1.6
+  no longer exposes the legacy public `session.events` array.
+- Updated the plugin to read `snapshotEvents()` on DSH 0.1.6 while retaining
+  the `events` fallback for older supported DSH releases.
+- Installed the packed plugin into the real web Profile and restarted DSH.
+- A fresh isolated browser session selected `obsidian plugin`, created the
+  initial session, and retained the selection with zero console errors or warnings.
+- `pnpm build` and `pnpm verify`: passed.
+
+The DSH source checkout was not modified; only the plugin package and the local
+web Profile installation were changed for this regression test.
+
 ## 0.4.2 packaging regression — 2026-09-15
 
 - macOS arm64, Node.js 24.16.0, pnpm 9.15.9.
