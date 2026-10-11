@@ -1,0 +1,36 @@
+name: Bundle compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  disposable-profile:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh: [0.2.0-rc.2, 0.2.1-alpha.1, 0.2.1-alpha.2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - run: npm install --ignore-scripts --legacy-peer-deps --no-package-lock
+      - run: npm run build && npm run verify
+      - name: Pack the tested Bundle
+        run: npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP"
+      - name: Install the exact official DSH release
+        env:
+          DSH_TEST_VERSION: ${{ matrix.dsh }}
+        run: npm install --prefix "$RUNNER_TEMP/dsh" --ignore-scripts --no-audit --no-fund "@deepseek-ai/dsh@$DSH_TEST_VERSION"
+      - name: Verify an isolated Profile
+        run: node scripts/test-disposable.mjs "$RUNNER_TEMP/dsh/node_modules/@deepseek-ai/dsh/lib/bin.js" "$RUNNER_TEMP/dsh-token-usage-counter-0.5.0.tgz"

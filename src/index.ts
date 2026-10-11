@@ -24,7 +24,11 @@ import z from '@deepseek-ai/schemastery'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 import type { TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
-import type { SettingsScope } from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-storage-domain'
+import type {} from '@deepseek-ai/dsh-host-webserver'
+import type {} from '@deepseek-ai/dsh-client-connection'
+import * as v from 'zod/mini'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type {} from '@deepseek-ai/dsh-commands'
 
 export interface TokenCounters {
@@ -115,6 +119,46 @@ interface PersistedSnapshot {
   models: ModelTokenStats[]
   sessions: PersistedSessionRecord[]
 }
+
+interface CounterStore {
+  get(): PersistedSnapshot
+  replace(value: PersistedSnapshot): Promise<void>
+}
+
+interface LegacySettings {
+  register(namespace: string, schema: unknown): CounterStore
+}
+
+interface CompatiblePersistence {
+  list(): Promise<readonly (Session['header'] | { header: Session['header'] })[]>
+  inspect?: (id: Session['id']) => Promise<{ meta: Session['header']; events: readonly SessionEvent[] }>
+  open(id: Session['id'], access: 'read'): Promise<{
+    header: Session['header']; inheritedEventCount?: number
+    read(): Promise<{ events: readonly SessionEvent[] }>
+    close(): Promise<void>
+  }>
+}
+
+const storedCount = v.number().check(v.minimum(0), v.multipleOf(1))
+const storedCounters = v.object({
+  inputTokens: storedCount, outputTokens: storedCount, cacheReadTokens: storedCount,
+  cacheWriteTokens: storedCount, totalTokens: storedCount,
+})
+const storedModel = v.object({ provider: v.string(), model: v.string(), counters: storedCounters, calls: storedCount })
+const storedStep = v.object({ turn: storedCount, step: storedCount, counters: storedCounters })
+const storedSnapshot = v.object({
+  totals: v.object({ ...storedCounters.shape, calls: storedCount }),
+  calls: storedCount,
+  daily: v.array(v.object({ date: v.string(), tokens: storedCount, calls: storedCount,
+    inputTokens: v.optional(storedCount), outputTokens: v.optional(storedCount),
+    cacheReadTokens: v.optional(storedCount), cacheWriteTokens: v.optional(storedCount),
+  })),
+  models: v.array(storedModel),
+  sessions: v.array(v.object({ sessionId: v.string(), consumedSeq: storedCount, counters: storedCounters,
+    calls: storedCount, models: v.array(storedModel), pending: v.optional(storedStep),
+    last: v.optional(v.object({ ...storedStep.shape, provider: v.string(), model: v.string(), dateKey: v.string() })),
+  })),
+})
 
 const COUNTERS_SCHEMA = z.object({
   inputTokens: z.number().step(1).min(0).default(0),
@@ -413,7 +457,45 @@ export const name = 'token-usage-counter'
 export const inject = ['sessions', 'settings']
 
 export function apply(ctx: Context): void {
-  ctx.plugin(TokenUsageCounter)
+  if (typeof (ctx.settings as unknown as Partial<LegacySettings>).register === 'function') {
+    ctx.plugin(TokenUsageCounter)
+  } else {
+    // DSH 0.2 separates configuration forms from persistent plugin data.
+    // Wait for the public domain facility instead of writing Profile config.
+    ctx.inject(['storageDomain'], async (storageCtx) => {
+      const domain = await storageCtx.storageDomain.open({
+        name: 'dsh_token_usage_counter', version: 1, tables: {},
+        global: { schema: storedSnapshot, initial: TOKEN_USAGE_COUNTER_SCHEMA({}) },
+      })
+      const store: CounterStore = { get: () => domain.global.get(), replace: value => domain.global.set(value) }
+      storageCtx.effect(() => () => domain.close(), 'token-usage-counter: storage close')
+      storageCtx.plugin(TokenUsageCounter, { store })
+    })
+  }
+  ctx.inject(['webServer', 'connection', 'tokenUsageCounter'], (webCtx) => {
+    webCtx.effect(() => webCtx.webServer.register({
+      kind: 'exact', path: '/api2/dsh-token-usage-counter/snapshot',
+      handler: async (req: IncomingMessage, res: ServerResponse) => {
+        const send = (status: number, value: unknown): void => {
+          res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' })
+          res.end(JSON.stringify(value))
+        }
+        // Exact Web routes precede the built-in API auth middleware.
+        let rejection: number | undefined = 503
+        try { rejection = await webCtx.connection.requestRejection(req) } catch { /* fail closed */ }
+        if (rejection !== undefined) return send([401, 403].includes(rejection) ? rejection : 503, { error: 'authentication-required' })
+        if (req.method !== 'GET') return send(405, { error: 'GET-required' })
+        const origin = req.headers.origin
+        if (origin) {
+          try { if (new URL(origin).host !== req.headers.host) return send(403, { error: 'cross-origin-denied' }) }
+          catch { return send(403, { error: 'cross-origin-denied' }) }
+        }
+        const snapshot = webCtx.tokenUsageCounter.snapshot()
+        // The page receives aggregate data only, never session histories.
+        send(200, { totals: snapshot.totals, daily: snapshot.daily, models: snapshot.models })
+      },
+    }), 'token-usage-counter: read-only snapshot route')
+  })
 }
 
 /**
@@ -433,16 +515,16 @@ export class TokenUsageCounter extends Service {
   private calls = 0
   private legacyBaseline = false
   private dailyNeedsBackfill = false
-  private scope: SettingsScope<PersistedSnapshot> | undefined
+  private scope: CounterStore | undefined
   private persistTimer: ReturnType<typeof setTimeout> | undefined
   private persistChain: Promise<void> = Promise.resolve()
 
-  constructor(ctx: Context) {
+  constructor(ctx: Context, options?: { store: CounterStore }) {
     super(ctx, 'tokenUsageCounter')
 
     // Restore cumulative counters from the settings document before adopting
     // live sessions, so restarting the harness does not reset or double count.
-    const scope = ctx.settings.register(
+    const scope = options?.store ?? (ctx.settings as unknown as LegacySettings).register(
       TOKEN_USAGE_COUNTER_NAMESPACE,
       TOKEN_USAGE_COUNTER_SCHEMA,
     )
@@ -510,15 +592,24 @@ export class TokenUsageCounter extends Service {
 
   private async hydrateFromPersistence(persistence: SessionPersistence): Promise<void> {
     try {
-      const headers = await persistence.list()
+      const compatible = persistence as unknown as CompatiblePersistence
+      const headers = await compatible.list()
       const histories = new Map<string, SessionHistory>()
-      for (const header of headers) {
-        const inspection = await persistence.inspect(header.id)
-        histories.set(String(header.id), {
-          sessionId: String(header.id),
-          header: inspection.meta,
-          events: inspection.events,
-        })
+      for (const item of headers) {
+        const header = 'header' in item ? item.header : item
+        if (typeof compatible.inspect === 'function') {
+          const inspection = await compatible.inspect(header.id)
+          histories.set(String(header.id), { sessionId: String(header.id), header: inspection.meta, events: inspection.events })
+        } else {
+          const handle = await compatible.open(header.id, 'read')
+          try {
+            const { events } = await handle.read()
+            histories.set(String(header.id), {
+              sessionId: String(header.id), header: handle.header, events,
+              firstLiveSeq: handle.inheritedEventCount,
+            })
+          } finally { await handle.close() }
+        }
       }
       for (const session of this.ctx.sessions.list()) {
         histories.set(session.id, historyFromSession(session))
@@ -536,8 +627,8 @@ export class TokenUsageCounter extends Service {
       }
       if (this.dailyNeedsBackfill) this.backfillDailyBreakdown(ordered)
       this.schedulePersist(0)
-    } catch (error) {
-      this.ctx.logger.warn('[token-usage-counter] failed to backfill persisted sessions: %o', error)
+    } catch {
+      this.ctx.logger.warn('[usage-counter] failed to backfill persisted sessions; existing totals retained')
     }
   }
 
@@ -612,7 +703,7 @@ export class TokenUsageCounter extends Service {
     }
   }
 
-  private snapshot(): PersistedSnapshot {
+  snapshot(): PersistedSnapshot {
     const sessions: PersistedSessionRecord[] = []
     for (const [sessionId, record] of this.records) {
       sessions.push({
@@ -1087,4 +1178,4 @@ export class TokenUsageCounter extends Service {
   }
 }
 
-export default TokenUsageCounter
+export default { name, inject, apply }

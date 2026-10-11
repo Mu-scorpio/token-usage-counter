@@ -6,13 +6,12 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import type { SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
 import type { InjectFace, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { UsageDailyStat, UsageStatsSnapshot } from './types.ts'
+import type { UsageDailyStat, UsageStatsScope } from './types.ts'
 import type { UsageStatsLocaleKey } from './locales.ts'
 
 export interface UsageStatsSectionInjected {
-  scope: SettingsScope<UsageStatsSnapshot>
+  scope: UsageStatsScope
   t: (key: UsageStatsLocaleKey, params?: Record<string, string | number>) => string
 }
 
@@ -152,7 +151,7 @@ function MetricRows({
 /** Render the plugin-owned usage section in Web Settings. */
 export function UsageStatsSection({ scope, t }: UsageStatsSectionProps): ReactNode {
   const subscribe = (callback: () => void): (() => void) => scope.subscribe(callback)
-  const getSnapshot = (): ReturnType<SettingsScope<UsageStatsSnapshot>['getSnapshot']> => scope.getSnapshot()
+  const getSnapshot = (): ReturnType<UsageStatsScope['getSnapshot']> => scope.getSnapshot()
   const snapshot = useSyncExternalStore(subscribe, getSnapshot)
   const heatmapGraphRef = useRef<HTMLDivElement>(null)
   const [heatmapWidth, setHeatmapWidth] = useState(0)
