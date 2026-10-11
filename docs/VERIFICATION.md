@@ -1,5 +1,75 @@
 # Verification
 
+## 0.5.0 — current DSH API compatibility — 2026-10-11
+
+Environment: macOS arm64, Node.js 24.16.0, pnpm 9.15.9. Each official npm
+DSH version was installed independently with install scripts disabled. The
+packed 0.5.0 Bundle was installed through the official CLI into a fresh
+`DSH_HOME` and `DSH_AGENTS_HOME`; provider credential environment variables
+were removed. No real user Profile was read or modified.
+
+| DSH release | Install | Start/service | Restart persistence | Uninstall | Upgrade rollback |
+| --- | --- | --- | --- | --- | --- |
+| 0.2.0-rc.2 | passed | passed | passed | passed | unknown |
+| 0.2.1-alpha.1 | passed | passed | passed | passed | unknown |
+| 0.2.1-alpha.2 | passed | passed | passed | passed | unknown |
+
+Reproduce against an independently installed exact official release:
+
+    npm install --ignore-scripts --legacy-peer-deps --no-package-lock
+    npm run build
+    npm run verify
+    npm pack --ignore-scripts
+    node scripts/test-disposable.mjs /path/to/dsh/lib/bin.js /path/to/plugin.tgz
+
+The same matrix runs in `.github/workflows/compatibility.yml` on Linux, Node 24.
+The matrix is deliberately pinned: future DSH releases need new checks before
+adding compatible declarations. Machine-readable local results are in
+[evidence/0.5.0-smoke.json](evidence/0.5.0-smoke.json).
+
+Each test asserts:
+
+- Exactly one plugin-owned entry is added; every official row remains in the
+  original order; no official package is added to the Profile dependencies.
+- The public counter service consumes synthetic successful usage through both
+  modern snapshotEvents() and legacy events readers. Two sessions total 40
+  tokens (20 uncached input, 6 output, 10 cache read, 4 cache write), with two
+  calls even after the same history is adopted again.
+- A second cold boot without synthetic replay restores the same totals and
+  calls from the official storage domain.
+- The authenticated Web document and read-only aggregate endpoint return 200;
+  unauthenticated requests return 401, cross-origin requests 403, writes 405.
+  The Web projection omits per-session records.
+- Uninstall removes the dependency and restores the exact baseline composed
+  configuration. Fixture homes and processes are removed in finally.
+
+Browser acceptance on 0.2.1-alpha.2: Playwright opened the isolated Web app,
+skipped API-key onboarding, opened Settings → 用量统计, and read back cumulative
+and daily counters, the heatmap and model section. The empty-data page rendered
+with zero browser errors or warnings. [Screenshot](evidence/0.5.0-settings.png).
+
+The test reproduced a real pre-fix failure: settings.register() no longer exists
+in DSH 0.2. The 0.5.0 Host now persists via storageDomain and reads session
+history through read-only handles; the Client no longer waits for the removed
+settingsScope service. The legacy settings adapter remains for older hosts,
+but historical compatible declarations are reset to unknown for this changed
+source until separately retested.
+
+These checks establish isolated install/runtime evidence. They do not exercise
+a real provider call, a real user Profile, old-settings snapshot migration,
+upgrade rollback or an independent security audit. They do not prove the Store
+Catalog migration has merged or that the public marketplace has relisted it.
+
+## Static audit interpretation
+
+The build-dsh-plugin audit was run. Its generic regex treats CSS field
+`card: 'dsh-token-usage-card'` as a Tool-card discriminant and log text mentioning
+numeric token totals as credential logging. Source review confirms these are a
+CSS class map and numeric usage logs; the plugin does not register a model Tool
+or log API credentials. These findings require contextual review, not disabling
+the scanner. The Store proposal uses conservative persistent-data permissions
+and user-reviewed updates. See SECURITY.md for the permission boundaries.
+
 ## 0.4.3 DSH 0.1.6 session compatibility — 2026-09-15
 
 - macOS arm64, Node.js 24.16.0, pnpm 9.15.9.

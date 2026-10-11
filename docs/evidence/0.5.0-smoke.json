@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-10-11",
+  "environment": {
+    "os": "macOS arm64",
+    "node": "24.16.0",
+    "pnpm": "9.15.9"
+  },
+  "results": [
+    {
+      "version": "0.2.0-rc.2",
+      "install": "passed",
+      "composition": "passed",
+      "start": "passed",
+      "hostService": "passed",
+      "syntheticUsage": "passed",
+      "restartPersistence": "passed",
+      "authenticatedHttp": 200,
+      "unauthenticatedHttp": 401,
+      "crossOriginHttp": 403,
+      "uninstall": "passed",
+      "rollback": "unknown",
+      "realProfile": "unchanged"
+    },
+    {
+      "version": "0.2.1-alpha.1",
+      "install": "passed",
+      "composition": "passed",
+      "start": "passed",
+      "hostService": "passed",
+      "syntheticUsage": "passed",
+      "restartPersistence": "passed",
+      "authenticatedHttp": 200,
+      "unauthenticatedHttp": 401,
+      "crossOriginHttp": 403,
+      "uninstall": "passed",
+      "rollback": "unknown",
+      "realProfile": "unchanged"
+    },
+    {
+      "version": "0.2.1-alpha.2",
+      "install": "passed",
+      "composition": "passed",
+      "start": "passed",
+      "hostService": "passed",
+      "syntheticUsage": "passed",
+      "restartPersistence": "passed",
+      "authenticatedHttp": 200,
+      "unauthenticatedHttp": 401,
+      "crossOriginHttp": 403,
+      "uninstall": "passed",
+      "rollback": "unknown",
+      "realProfile": "unchanged"
+    }
+  ]
+}

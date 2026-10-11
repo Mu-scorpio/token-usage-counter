@@ -1,6 +1,6 @@
 {
   "name": "dsh-token-usage-counter",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "Self-contained token usage statistics for DeepSeek Harness.",
   "type": "module",
   "main": "lib/index.js",
@@ -20,7 +20,9 @@
     "README.md",
     "README.zh.md",
     "LICENSE",
-    "assets"
+    "assets",
+    "SECURITY.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "keywords": [
     "dsh",
@@ -50,7 +52,9 @@
   "scripts": {
     "build": "tsdown",
     "verify": "node scripts/verify-package.mjs",
-    "prepublishOnly": "npm run build && npm run verify"
+    "prepublishOnly": "npm run build && npm run verify",
+    "check": "npm run verify",
+    "test:disposable": "node scripts/test-disposable.mjs"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -68,12 +72,14 @@
     "@deepseek-ai/dsh-client-runtime": "*",
     "@deepseek-ai/dsh-client-ui-settings": "*",
     "@deepseek-ai/dsh-client-ui-slots": "*",
-    "@deepseek-ai/schemastery": "*",
     "@deepseek-ai/dsh-llm": "*",
     "@deepseek-ai/dsh-session": "*",
     "@deepseek-ai/dsh-session-persistence": "*",
     "@deepseek-ai/dsh-settings": "*",
-    "react": "^18.2.0"
+    "@deepseek-ai/schemastery": "*",
+    "react": "^18.2.0",
+    "@deepseek-ai/dsh-storage-domain": "*",
+    "@deepseek-ai/dsh-host-webserver": "*"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -114,11 +120,18 @@
     },
     "react": {
       "optional": true
+    },
+    "@deepseek-ai/dsh-storage-domain": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-host-webserver": {
+      "optional": true
     }
   },
   "devDependencies": {
     "tsdown": "^0.22.2",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "zod": "^4.6.5"
   },
   "dsh": {
     "pluginType": "feature",
@@ -126,21 +139,44 @@
       "patch": "./cordis.patch.yml"
     },
     "compatibility": {
-      "dsh": ">=0.1.2-alpha.3 <=0.1.6-alpha.1",
+      "dsh": "0.2.0-rc.2 || 0.2.1-alpha.1 || 0.2.1-alpha.2",
       "dshReleases": {
-        "0.1.2-alpha.3": "compatible",
-        "0.1.2-alpha.4": "compatible",
-        "0.1.2-alpha.5": "compatible",
+        "0.1.2-alpha.3": "unknown",
+        "0.1.2-alpha.4": "unknown",
+        "0.1.2-alpha.5": "unknown",
         "0.1.2-rc.1": "unknown",
         "0.1.3-alpha.1": "unknown",
         "0.1.3-alpha.2": "unknown",
         "0.1.5-alpha.1": "unknown",
-        "0.1.5-alpha.2": "compatible",
-        "0.1.6-alpha.1": "compatible"
+        "0.1.5-alpha.2": "unknown",
+        "0.1.6-alpha.1": "unknown",
+        "0.2.0-rc.2": "compatible",
+        "0.2.1-alpha.1": "compatible",
+        "0.2.1-alpha.2": "compatible"
       },
       "profiles": [
         "web"
-      ]
+      ],
+      "dshOperations": {
+        "0.2.0-rc.2": {
+          "install": "passed",
+          "start": "passed",
+          "uninstall": "passed",
+          "rollback": "unknown"
+        },
+        "0.2.1-alpha.1": {
+          "install": "passed",
+          "start": "passed",
+          "uninstall": "passed",
+          "rollback": "unknown"
+        },
+        "0.2.1-alpha.2": {
+          "install": "passed",
+          "start": "passed",
+          "uninstall": "passed",
+          "rollback": "unknown"
+        }
+      }
     },
     "client": {
       "platform": "web",

@@ -10,7 +10,7 @@ views.
 | Capability | Description |
 | --- | --- |
 | Accurate buckets | Keeps the four provider-reported usage buckets separate. |
-| Persistent totals | Stores data in the plugin-owned dsh-token-usage-counter settings namespace. |
+| Persistent totals | Stores data in the plugin-owned DSH storage domain. |
 | Multiple views | Provides global, session, and provider/model summaries. |
 | Daily activity | Tracks local-day token totals and call counts. |
 | Built-in settings page | Ships its own Web settings view and heatmap. |
@@ -19,7 +19,13 @@ views.
 
 ## Install
 
-Install the published DSH Bundle into the web profile:
+To install this 0.5.0 source before an npm release, replace COMMIT with the
+full 40-character commit of the reviewed revision:
+
+    dsh plugin --profile web add -w github:Mu-scorpio/token-usage-counter#COMMIT
+
+The npm command installs the latest independently published version, which may
+differ from this checkout:
 
     dsh plugin --profile web add -w dsh-token-usage-counter
     dsh web
@@ -31,6 +37,14 @@ Version 0.4.0 moves persistence from the shared usage-stats namespace to the
 plugin-owned dsh-token-usage-counter namespace. Existing 0.3.x totals are not
 silently migrated because the shared namespace belongs to the built-in plugin;
 the new counter starts with an independent snapshot after the upgrade.
+
+Version 0.5.0 uses DSH's public storage-domain service for persistent data in
+`dsh_token_usage_counter`, and serves a read-only aggregate snapshot to its
+settings page through the existing DSH browser authentication. It does not
+write statistics into Profile configuration forms. Legacy plugin-owned
+settings data is not copied automatically; persisted session history can
+rebuild the counter where the DSH session store still retains that history.
+See [SECURITY.md](SECURITY.md) for permissions and evidence limits.
 
 ## Local development
 
@@ -48,7 +62,7 @@ For a manual composition, add only the plugin-owned entry:
 ## Compatibility
 
 - Node.js: 22.13.0 or newer.
-- DSH: 0.1.2-alpha.3–0.1.2-alpha.5, 0.1.5-alpha.2, and 0.1.6-alpha.1 have profile or UI checks; intervening releases are explicitly unknown.
+- Plugin 0.5.0: 0.2.0-rc.2, 0.2.1-alpha.1 and 0.2.1-alpha.2 passed isolated install, startup, persistence, authentication and uninstall checks. Older releases are unknown for this source.
 - Profile: web.
 - Exact per-release results and disposable-profile evidence are recorded in
   docs/VERIFICATION.md.
@@ -61,6 +75,10 @@ Store listing migration details: [docs/STORE-REMEDIATION.md](docs/STORE-REMEDIAT
     npm install --ignore-scripts --legacy-peer-deps --no-package-lock
     npm run build
     npm run verify
+
+Run a packed Bundle against an independently installed official DSH CLI:
+
+    npm run test:disposable -- /path/to/dsh/lib/bin.js /path/to/plugin.tgz
 
 The generated host and client bundles are committed under lib.
 

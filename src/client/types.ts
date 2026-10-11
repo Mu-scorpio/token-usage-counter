@@ -38,3 +38,8 @@ export interface UsageStatsSnapshot {
   readonly daily: readonly UsageDailyStat[]
   readonly models?: readonly UsageModelStat[]
 }
+
+export interface UsageStatsScope {
+  subscribe(callback: () => void): () => void
+  getSnapshot(): { status: 'loading' | 'ready' | 'unavailable'; value?: UsageStatsSnapshot }
+}
